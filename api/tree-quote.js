@@ -1,8 +1,21 @@
 // api/tree-quote.js
+// Updated to read pricing from Vercel KV (set by the admin slider page)
+
+import { kv } from '@vercel/kv';
+
 export const config = {
   api: {
-    bodyParser: false, // needed so we can read the raw multipart form
+    bodyParser: false,
   },
+};
+
+const DEFAULTS = {
+  pricePerFoot: 28,
+  multHigh: 1.8,
+  multMod: 1.35,
+  multRemoval: 1.6,
+  minPrice: 450,
+  spreadPercent: 20
 };
 
 export default async function handler(req, res) {
@@ -11,9 +24,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Parse multipart form data
-    const formData = await req.formData?.() || await parseFormData(req);
-    
+    const formData = await req.formData();
     const name = formData.get('name') || '';
     const email = formData.get('email') || '';
     const phone = formData.get('phone') || '';
@@ -26,94 +37,42 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'No image received' });
     }
 
-    // Convert image to base64 (for sending to a vision API later)
-    const arrayBuffer = await imageFile.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
-    const mimeType = imageFile.type || 'image/jpeg';
+    // Load current pricing (falls back to defaults)
+    let pricing = DEFAULTS;
+    try {
+      const saved = await kv.get('pricing');
+      if (saved) pricing = { ...DEFAULTS, ...saved };
+    } catch (e) {
+      console.warn('KV read failed, using defaults');
+    }
 
-    // ========== MVP QUOTE LOGIC ==========
-    // For the first version we return a realistic mock based on simple heuristics.
-    // Later you can replace this block with a real call to Grok / GPT-4o / Claude vision.
-    
-    const height = Math.round(25 + Math.random() * 30); // 25–55 ft
+    // Mock analysis (replace with real vision later)
+    const height = Math.round(25 + Math.random() * 30);
     const complexities = ['Low', 'Moderate', 'High'];
     const complexity = complexities[Math.floor(Math.random() * 3)];
-    const hazardOptions = [
-      'Open yard',
-      'Near fence',
-      'Power lines nearby',
-      'Tight access',
-      'Close to structure'
-    ];
+    const hazardOptions = ['Open yard', 'Near fence', 'Power lines nearby', 'Tight access', 'Close to structure'];
     const hazards = hazardOptions[Math.floor(Math.random() * hazardOptions.length)];
 
-    // Simple pricing model (adjust to Happy’s real rates)
-    let base = height * 14;
-    if (complexity === 'High') base *= 1.7;
-    else if (complexity === 'Moderate') base *= 1.25;
-    if (service === 'removal') base *= 1.4;
-    if (service === 'stump') base *= 0.6;
+    // Apply pricing from admin sliders
+    let base = height * pricing.pricePerFoot;
+    if (complexity === 'High') base *= pricing.multHigh;
+    else if (complexity === 'Moderate') base *= pricing.multMod;
+    if (service === 'removal') base *= pricing.multRemoval;
+    if (base < pricing.minPrice) base = pricing.minPrice;
 
-    const low = Math.round(base * 0.85);
-    const high = Math.round(base * 1.3);
+    const spread = pricing.spreadPercent / 100;
+    const low = Math.round(base * (1 - spread));
+    const high = Math.round(base * (1 + spread));
 
-    const result = {
+    return res.status(200).json({
       height: `${height} ft`,
       complexity,
       hazards,
       quoteRange: `$${low.toLocaleString()} – $${high.toLocaleString()}`,
-      // Extra fields you may want later
-      customer: { name, email, phone, address, service, notes },
-      imageReceived: true
-    };
-
-    // Optional: log for debugging
-    console.log('Quote generated:', result);
-
-    return res.status(200).json(result);
-
+      customer: { name, email, phone, address, service, notes }
+    });
   } catch (err) {
-    console.error('Quote error:', err);
+    console.error(err);
     return res.status(500).json({ error: 'Failed to process quote' });
   }
-}
-
-// Fallback parser if req.formData is not available
-async function parseFormData(req) {
-  const busboy = require('busboy');
-  return new Promise((resolve, reject) => {
-    const bb = busboy({ headers: req.headers });
-    const fields = {};
-    const files = {};
-
-    bb.on('field', (name, val) => {
-      fields[name] = val;
-    });
-
-    bb.on('file', (name, file, info) => {
-      const chunks = [];
-      file.on('data', (d) => chunks.push(d));
-      file.on('end', () => {
-        files[name] = {
-          buffer: Buffer.concat(chunks),
-          filename: info.filename,
-          mimeType: info.mimeType
-        };
-      });
-    });
-
-    bb.on('finish', () => {
-      const formData = {
-        get: (key) => fields[key] || (files[key] ? {
-          arrayBuffer: async () => files[key].buffer,
-          type: files[key].mimeType,
-          name: files[key].filename
-        } : null)
-      };
-      resolve(formData);
-    });
-
-    bb.on('error', reject);
-    req.pipe(bb);
-  });
 }
