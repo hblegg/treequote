@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Happy's Tree Service | Pricing Admin</title>
+  <style>
+    :root {
+      --primary: #2d6a4f;
+      --primary-light: #40916c;
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #1b4332;
+      --muted: #52796f;
+      --border: #d8f3dc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 640px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 1.5rem; }
+    header h1 { color: var(--primary); font-size: 1.6rem; }
+    header p { color: var(--muted); margin-top: 0.3rem; }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      border: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .slider-group { margin-bottom: 1.25rem; }
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      font-size: 0.95rem;
+    }
+    .slider-group .value {
+      color: var(--primary);
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      height: 6px;
+    }
+    .preview {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-top: 0.5rem;
+    }
+    .preview h2 { font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--primary); }
+    .metric { display: flex; justify-content: space-between; padding: 0.35rem 0; }
+    .quote-range { font-size: 1.5rem; font-weight: 700; color: var(--primary); margin: 0.5rem 0; }
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+    .btn:hover { background: #1b4332; }
+    .note { font-size: 0.85rem; color: var(--muted); margin-top: 1rem; text-align: center; }
+    .sample-controls { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .sample-controls button {
+      flex: 1;
+      min-width: 90px;
+      padding: 0.5rem;
+      border: 1px solid #c9d6e5;
+      background: #f8fbff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .sample-controls button.active {
+      border-color: var(--primary);
+      background: #e9f5ee;
+      color: var(--primary);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Pricing Admin</h1>
+      <p>Adjust quote pricing for Happy's Tree Service</p>
+    </header>
+
+    <div class="card">
+      <div class="sample-controls">
+        <button type="button" class="active" data-height="30">30 ft tree</button>
+        <button type="button" data-height="45">45 ft tree</button>
+        <button type="button" data-height="60">60 ft tree</button>
+      </div>
+
+      <div class="slider-group">
+        <label>Price per foot <span class="value" id="valPricePerFoot">$28</span></label>
+        <input type="range" id="pricePerFoot" min="10" max="80" value="28" step="1" />
+      </div>
+
+      <div class="slider-group">
+        <label>High complexity multiplier <span class="value" id="valHigh">1.8×</span></label>
+        <input type="range" id="multHigh" min="1.2" max="3.0" value="1.8" step="0.1" />
+      </div>
+
+      <div class="slider-group">
+        <label>Moderate complexity multiplier <span class="value" id="valMod">1.35×</span></label>
+        <input type="range" id="multMod" min="1.0" max="2.0" value="1.35" step="0.05" />
+      </div>
+
+      <div class="slider-group">
+        <label>Removal multiplier <span class="value" id="valRemoval">1.6×</span></label>
+        <input type="range" id="multRemoval" min="1.0" max="2.5" value="1.6" step="0.1" />
+      </div>
+
+      <div class="slider-group">
+        <label>Minimum price <span class="value" id="valMin">$450</span></label>
+        <input type="range" id="minPrice" min="200" max="1500" value="450" step="25" />
+      </div>
+
+      <div class="slider-group">
+        <label>Quote range spread <span class="value" id="valSpread">±20%</span></label>
+        <input type="range" id="spread" min="10" max="40" value="20" step="5" />
+      </div>
+    </div>
+
+    <div class="card preview">
+      <h2>Sample Quote Preview</h2>
+      <div class="metric"><span>Tree height</span><span id="prevHeight">30 ft</span></div>
+      <div class="metric"><span>Complexity</span><span id="prevComplexity">Moderate</span></div>
+      <div class="metric"><span>Service</span><span id="prevService">Trimming</span></div>
+      <div class="quote-range" id="prevQuote">$756 – $1,134</div>
+      <p class="note">This is a live preview based on the sliders above.</p>
+    </div>
+
+    <div class="card">
+      <button class="btn" id="saveBtn">Save Pricing to Server</button>
+      <p class="note" id="saveStatus"></p>
+      <p class="note" style="margin-top:0.75rem;">
+        Saves the current slider values. The quote form will use these numbers on the next estimate.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const els = {
+      pricePerFoot: document.getElementById('pricePerFoot'),
+      multHigh: document.getElementById('multHigh'),
+      multMod: document.getElementById('multMod'),
+      multRemoval: document.getElementById('multRemoval'),
+      minPrice: document.getElementById('minPrice'),
+      spread: document.getElementById('spread'),
+      valPricePerFoot: document.getElementById('valPricePerFoot'),
+      valHigh: document.getElementById('valHigh'),
+      valMod: document.getElementById('valMod'),
+      valRemoval: document.getElementById('valRemoval'),
+      valMin: document.getElementById('valMin'),
+      valSpread: document.getElementById('valSpread'),
+      prevHeight: document.getElementById('prevHeight'),
+      prevComplexity: document.getElementById('prevComplexity'),
+      prevService: document.getElementById('prevService'),
+      prevQuote: document.getElementById('prevQuote'),
+      copyStatus: document.getElementById('copyStatus')
+    };
+
+    let sampleHeight = 30;
+    let sampleComplexity = 'Moderate';
+    let sampleService = 'trim';
+
+    function updateLabels() {
+      els.valPricePerFoot.textContent = '$' + els.pricePerFoot.value;
+      els.valHigh.textContent = parseFloat(els.multHigh.value).toFixed(2) + '×';
+      els.valMod.textContent = parseFloat(els.multMod.value).toFixed(2) + '×';
+      els.valRemoval.textContent = parseFloat(els.multRemoval.value).toFixed(2) + '×';
+      els.valMin.textContent = '$' + els.minPrice.value;
+      els.valSpread.textContent = '±' + els.spread.value + '%';
+    }
+
+    function calculateQuote() {
+      const pricePerFoot = parseFloat(els.pricePerFoot.value);
+      const multHigh = parseFloat(els.multHigh.value);
+      const multMod = parseFloat(els.multMod.value);
+      const multRemoval = parseFloat(els.multRemoval.value);
+      const minPrice = parseFloat(els.minPrice.value);
+      const spread = parseFloat(els.spread.value) / 100;
+
+      let base = sampleHeight * pricePerFoot;
+      if (sampleComplexity === 'High') base *= multHigh;
+      else if (sampleComplexity === 'Moderate') base *= multMod;
+      if (sampleService === 'removal') base *= multRemoval;
+      if (base < minPrice) base = minPrice;
+
+      const low = Math.round(base * (1 - spread));
+      const high = Math.round(base * (1 + spread));
+
+      els.prevHeight.textContent = sampleHeight + ' ft';
+      els.prevComplexity.textContent = sampleComplexity;
+      els.prevService.textContent = sampleService === 'removal' ? 'Removal' : 'Trimming';
+      els.prevQuote.textContent = `$${low.toLocaleString()} – $${high.toLocaleString()}`;
+    }
+
+    function update() {
+      updateLabels();
+      calculateQuote();
+    }
+
+    // Sample tree size buttons
+    document.querySelectorAll('.sample-controls button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.sample-controls button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        sampleHeight = parseInt(btn.dataset.height);
+        update();
+      });
+    });
+
+    // All sliders
+    ['pricePerFoot','multHigh','multMod','multRemoval','minPrice','spread'].forEach(id => {
+      document.getElementById(id).addEventListener('input', update);
+    });
+
+    const PRICING_ENDPOINT = 'https://treequote2.vercel.app/api/pricing';
+    const ADMIN_KEY = 'demo-key-change-me'; // change this and set the same value in Vercel env as ADMIN_KEY
+
+    async function loadSettings() {
+      try {
+        const res = await fetch(PRICING_ENDPOINT);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.pricePerFoot) els.pricePerFoot.value = data.pricePerFoot;
+        if (data.multHigh) els.multHigh.value = data.multHigh;
+        if (data.multMod) els.multMod.value = data.multMod;
+        if (data.multRemoval) els.multRemoval.value = data.multRemoval;
+        if (data.minPrice) els.minPrice.value = data.minPrice;
+        if (data.spreadPercent) els.spread.value = data.spreadPercent;
+        update();
+      } catch (e) {
+        console.warn('Could not load saved pricing');
+      }
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const settings = {
+        pricePerFoot: parseFloat(els.pricePerFoot.value),
+        multHigh: parseFloat(els.multHigh.value),
+        multMod: parseFloat(els.multMod.value),
+        multRemoval: parseFloat(els.multRemoval.value),
+        minPrice: parseFloat(els.minPrice.value),
+        spreadPercent: parseFloat(els.spread.value)
+      };
+      const status = document.getElementById('saveStatus');
+      status.textContent = 'Saving…';
+      try {
+        const res = await fetch(PRICING_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': ADMIN_KEY
+          },
+          body: JSON.stringify(settings)
+        });
+        if (!res.ok) throw new Error('Save failed');
+        status.textContent = '✓ Pricing saved. New quotes will use these values.';
+      } catch (err) {
+        status.textContent = 'Could not save. Check the endpoint and ADMIN_KEY.';
+      }
+      setTimeout(() => status.textContent = '', 4000);
+    });
+
+    loadSettings();
+  </script>
+</body>
+</html>
